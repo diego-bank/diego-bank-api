@@ -8,6 +8,7 @@ inflection==0.5.1
 jsonschema==4.19.1
 jsonschema-specifications==2023.7.1
 mysqlclient==2.2.0
+Pillow==10.1.0
 PyJWT==2.8.0
 python-dotenv==1.0.0
 pytz==2023.3.post1

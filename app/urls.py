@@ -10,6 +10,9 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView
 )
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('api/v1/user/', include('user.urls')),
     path('admin/', admin.site.urls),
@@ -20,3 +23,9 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='api-schema'), name='api-docs'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT,
+    )

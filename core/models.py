@@ -1,6 +1,9 @@
 """
 Models of the application
 """
+import os
+import uuid
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -9,6 +12,12 @@ from django.contrib.auth.models import (
 )
 from django.utils import timezone
 
+def user_image_field(instance, filename):
+    """Generate file path for user image."""
+    ext = os.path.splitext(filename)[1]
+    filename = f'{uuid.uuid4()}{ext}'
+
+    return os.path.join('uploads', 'user', filename)
 
 class UserManager (BaseUserManager):
     """Manager For users"""
@@ -40,7 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=255, null=False)
     cpf = models.CharField(max_length=11, unique=True)
     # cnpj = models.CharField(max_length=14, unique=True)
-    # url_imagem = models.ImageField(null=True, upload_to=user_image_field)
+    url_image = models.ImageField(null=True, upload_to=user_image_field)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)

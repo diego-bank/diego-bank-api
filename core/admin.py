@@ -36,6 +36,7 @@ class UserAdmin(BaseUserAdmin):
                 'last_name',
                 'cpf',
                 'email',
+                'url_image',
                 'password1',
                 'password2',
                 'is_active',
