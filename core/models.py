@@ -19,15 +19,16 @@ def user_image_field(instance, filename):
 
     return os.path.join('uploads', 'user', filename)
 
-class Conta(models.Model):
+class Account(models.Model):
     """Conta para os clientes(usuários)"""
-    agencia = models.CharField(max_length=255)
-    numero = models.CharField(max_length=8, unique=True)
-    saldo = models.DecimalField(max_digits=5, decimal_places=2)
+    agency = models.CharField(max_length=255)
+    number = models.CharField(max_length=8, unique=True)
+    balance = models.DecimalField(max_digits=5, decimal_places=2)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT
     )
+    created_at = models.DateTimeField(default=timezone.now)
     
 
 class UserManager (BaseUserManager):

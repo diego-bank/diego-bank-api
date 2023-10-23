@@ -15,6 +15,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('api/v1/user/', include('user.urls')),
+    path('api/v1/', include('api.urls')),
     path('admin/', admin.site.urls),
     
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
