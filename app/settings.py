@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'drf_spectacular',
+    'corsheaders',
     
     'core',
     'user',
@@ -59,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'app.urls'
@@ -161,3 +163,5 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 }
+
+CORS_ORIGIN_ALLOW_ALL = True
