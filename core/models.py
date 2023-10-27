@@ -11,6 +11,7 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 from django.utils import timezone
+from datetime import date, timedelta
 
 def user_image_field(instance, filename):
     """Generate file path for user image."""
@@ -72,3 +73,56 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def __str__(self) -> str:
         return f'{self.first_name} {self.last_name}'
+    
+class Address(models.Model):
+    country = models.CharField(max_length=255)
+    state = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)
+    district = models.CharField(max_length=255)
+    street = models.CharField(max_length=255)
+    number = models.PositiveIntegerField()
+    complement = models.CharField(max_length=255, null=True)
+    zip_code = models.CharField(max_length=255)
+    client = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING
+    )
+    
+class Card(models.Model):
+    number = models.CharField(max_length=20)
+    cvv = models.CharField(max_length=3)
+    expiration_date = models.DateField()
+    account = models.ForeignKey(Account, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        self.number = f"{randint(1000,9999)} {randint(1000,9999)} {randint(1000,9999)} {randint(1000,9999)}"
+        self.cvv = f"{randint(100,999)}"
+        self.expiration_date = date.today() + timedelta(3650)
+
+        super(Card, self).save(*args, **kwargs)
+        
+    def __str__(self) -> str:
+        return self.number
+    
+class Transaction(models.Model):
+    value = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    recipient = models.ForeignKey(Account, on_delete=models.DO_NOTHING, related_name="recipient")
+    card = models.ForeignKey(Card, on_delete=models.DO_NOTHING, related_name="card")
+    sender = models.ForeignKey(Account, on_delete=models.DO_NOTHING, related_name="sender")
+
+class Loan(models.Model):
+    value = models.DecimalField(decimal_places=2, max_digits=10)
+    date = models.DateTimeField(auto_now_add=True)
+    payments = models.IntegerField()
+    approved = models.BooleanField(default=False)
+    payed = models.BooleanField(default=False)
+    account = models.ForeignKey(Account, related_name="Loan", on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+class LoanPayment(models.Model):
+    value = models.DecimalField(decimal_places=2, max_digits=10)
+    payment_date = models.DateTimeField(auto_now_add=True)
+    loan = models.ForeignKey(Loan, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
