@@ -9,6 +9,8 @@ from core.models import Account
 from api import serializers
 import random, decimal
 
+from rest_framework.decorators import action
+
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     authentication_classes = [authenticationJWT.JWTAuthentication]
@@ -46,3 +48,27 @@ class AccountViewSet(viewsets.ModelViewSet):
             account.save()
             return Response({'message': 'Created', 'agency': account.agency, 'number': account.number}, status=status.HTTP_201_CREATED)
             
+    @action(methods=['POST'], detail=True, pk=None, url_path='withdraw')
+    def withdraw(self, request, pk=None):
+        account = Account.objects.filter(id=pk).first()
+        
+        serializer_received = serializers.WithdrawSerializer(request=request.data)
+        
+        if serializer_received.is_valid() and account:
+            value_withdraw = decimal.Decimal(serializer_received.validated_data.get('value'))
+            balance = decimal.Decimal(account.balance)
+            
+            comparison = balance.compare(value_withdraw)
+            
+            if comparison == 0 or comparison == 1:
+                new_value = 0 if balance - value_withdraw < 0 else balance - value_withdraw
+                
+                account.balance = new_value
+                
+                account.save()
+                
+                return Response({"saldo": account.balance}, status=status.HTTP_200_OK)
+            
+            return Response({'message': "Saldo insuficiente"}, status=status.HTTP_403_FORBIDDEN)
+        
+        return Response(serializer_received.errors, status=status.HTTP_400_BAD_REQUEST)
