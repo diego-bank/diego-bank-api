@@ -31,6 +31,9 @@ class Account(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now)
     
+    def __str__(self) -> str:
+        return f'{self.agency} - {self.number}'
+    
 
 class UserManager (BaseUserManager):
     """Manager For users"""
