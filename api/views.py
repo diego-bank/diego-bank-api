@@ -48,7 +48,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             account.save()
             return Response({'message': 'Created', 'agency': account.agency, 'number': account.number}, status=status.HTTP_201_CREATED)
             
-    @action(methods=['POST'], detail=True, pk=None, url_path='withdraw')
+    @action(methods=['POST'], detail=True, url_path='withdraw')
     def withdraw(self, request, pk=None):
         account = Account.objects.filter(id=pk).first()
         
