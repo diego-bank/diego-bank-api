@@ -25,7 +25,17 @@ class CardSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = '__all__'
+        fields = ['value', 'description', 'sender', 'card', 'recipient']
+
+class TransactionDepositSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['value', 'description', 'recipient']
+        
+class TransactionWithdrawSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['value', 'description', 'sender']
 
 class LoanSerializer(serializers.ModelSerializer):
     class Meta:

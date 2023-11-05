@@ -2,10 +2,11 @@ from rest_framework import (
     viewsets,
     status
 )
+from rest_framework.generics import mixins
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt import authentication as authenticationJWT
-from core.models import Account
+from core.models import Account, Transaction, Card
 from api import serializers
 import random, decimal
 
@@ -52,7 +53,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     def withdraw(self, request, pk=None):
         account = Account.objects.filter(id=pk).first()
         
-        serializer_received = serializers.WithdrawSerializer(request=request.data)
+        serializer_received = serializers.WithdrawSerializer(data=request.data)
         
         if serializer_received.is_valid() and account:
             value_withdraw = decimal.Decimal(serializer_received.validated_data.get('value'))
@@ -67,6 +68,17 @@ class AccountViewSet(viewsets.ModelViewSet):
                 
                 account.save()
                 
+                transaction_data = {
+                    'sender': account.id,
+                    'value': value_withdraw,
+                    'description': 'Withdraw'
+                }
+                
+                transaction_serializer = serializers.TransactionWithdrawSerializer(data=transaction_data)
+                
+                if transaction_serializer.is_valid():
+                    transaction_serializer.save()
+                
                 return Response({"saldo": account.balance}, status=status.HTTP_200_OK)
             
             return Response({'message': "Saldo insuficiente"}, status=status.HTTP_403_FORBIDDEN)
@@ -77,7 +89,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     def deposit(self, request, pk=None):
         account = Account.objects.filter(id=pk).first()
         
-        serializer_received = serializers.DepositSerializer(request=request.data)
+        serializer_received = serializers.DepositSerializer(data=request.data)
         
         if serializer_received.is_valid() and account:
             balance = decimal.Decimal(account.balance)
@@ -86,6 +98,25 @@ class AccountViewSet(viewsets.ModelViewSet):
             account.balance = balance + value_deposit
             account.save()
             
+            transaction_data = {
+                    'recipient': account.id,
+                    'value': value_deposit,
+                    'description': 'Deposit'
+                }
+                
+            transaction_serializer = serializers.TransactionDepositSerializer(data=transaction_data)
+            
+            if transaction_serializer.is_valid():
+                transaction_serializer.save()
+            
             return Response({"saldo": account.balance}, status=status.HTTP_200_OK)
             
         return Response(serializer_received.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = serializers.TransactionSerializer
+    
+class CardViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = Card.objects.all()
+    serializer_class = serializers.CardSerializer

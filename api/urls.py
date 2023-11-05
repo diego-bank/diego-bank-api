@@ -4,6 +4,8 @@ from api import views
 
 router = DefaultRouter()
 router.register('accounts', views.AccountViewSet)
+router.register('transactions', views.TransactionViewSet)
+router.register('cards', views.CardViewSet)
 
 app_name = 'api'
 

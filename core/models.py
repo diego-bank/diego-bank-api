@@ -35,7 +35,7 @@ class Account(models.Model):
         return f'{self.agency} - {self.number}'
     
 
-class UserManager (BaseUserManager):
+class UserManager(BaseUserManager):
     """Manager For users"""
     def create_user(self, email, password=None, **extra_fields):
         """Create, save and return a new user."""
@@ -110,10 +110,11 @@ class Card(models.Model):
     
 class Transaction(models.Model):
     value = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    recipient = models.ForeignKey(Account, on_delete=models.DO_NOTHING, related_name="recipient")
-    card = models.ForeignKey(Card, on_delete=models.DO_NOTHING, related_name="card")
-    sender = models.ForeignKey(Account, on_delete=models.DO_NOTHING, related_name="sender")
+    recipient = models.ForeignKey(Account, on_delete=models.DO_NOTHING, related_name="recipient", null=True)
+    card = models.ForeignKey(Card, on_delete=models.DO_NOTHING, related_name="card", null=True)
+    sender = models.ForeignKey(Account, on_delete=models.DO_NOTHING, related_name="sender", null=True)
 
 class Loan(models.Model):
     value = models.DecimalField(decimal_places=2, max_digits=10)
