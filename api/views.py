@@ -116,7 +116,26 @@ class AccountViewSet(viewsets.ModelViewSet):
 class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Transaction.objects.all()
     serializer_class = serializers.TransactionSerializer
+    authentication_classes = [authenticationJWT.JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Pegar contas para usuários autenticados"""
+        queryset = self.queryset
+        result1 = queryset.filter(
+            sender=Account.objects.all().filter(user=self.request.user).order_by("-created_at").distinct().first()
+        ).order_by("-created_at").distinct()
+        result2 = queryset.filter(
+            recipient=Account.objects.all().filter(user=self.request.user).order_by("-created_at").distinct().first()
+        ).order_by("-created_at").distinct()
+        
+        
+        return result1.union(result2, all=True).order_by("-created_at")
+    
     
 class CardViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Card.objects.all()
     serializer_class = serializers.CardSerializer
+    authentication_classes = [authenticationJWT.JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
