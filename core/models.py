@@ -65,7 +65,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=255, null=False)
     cpf = models.CharField(max_length=11, unique=True)
     # cnpj = models.CharField(max_length=14, unique=True)
-    url_image = models.ImageField(null=True, upload_to=user_image_field)
+    url_image = models.ImageField(default=None, null=True, upload_to=user_image_field)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)

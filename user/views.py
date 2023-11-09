@@ -12,10 +12,52 @@ from user.serializers import UserSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
 
+from api import serializers
+import random, decimal
+from core.models import Account
+
 class CreateUserAPIView(generics.CreateAPIView):
     """Create a new user"""
     serializer_class = UserSerializer
     # permission_classes = [AllowAny, ]
+    
+    def create(self, request, *args, **kwargs):
+        print(request.data)
+        user_serializer = self.get_serializer(data=request.data)
+        print(user_serializer)
+        print("\n\n")
+        print(user_serializer.is_valid())
+        print("\n\n")
+        
+        if user_serializer.is_valid():
+            
+            user = user_serializer.save()
+            
+            print(user)
+            
+            data_account = {}
+            serializer_account = serializers.AccountSerializer(data=data_account)
+            
+            if serializer_account.is_valid():
+                agency = '0001'
+                number = ''
+                for n in range(8):
+                    number += str(random.randint(0, 9))
+                
+                account = Account(
+                    user=user,
+                    agency=agency,
+                    number=number,
+                )
+                
+                account.balance = decimal.Decimal(0)
+                
+                account.save()
+                
+                return Response({'message': 'Created'}, status=status.HTTP_201_CREATED)
+
+        return Response({"Erro": "Erro"}, status=status.HTTP_400_BAD_REQUEST)
+            
 
 class ManagerUserAPIView(generics.RetrieveUpdateAPIView):
     """Manage for the users"""
