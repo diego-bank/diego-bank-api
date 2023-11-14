@@ -12,6 +12,28 @@ import random, decimal
 
 from rest_framework.decorators import action
 
+# class AccountSearchViewSet(mixins.ListModelMixin):
+#     queryset = Account.objects.all()
+#     authentication_classes = [authenticationJWT.JWTAuthentication]
+#     permission_classes = [IsAuthenticated]
+#     serializer = serializers.AccountSerializer
+    
+#     def get_queryset(self, request):
+#         number = request.query_params.get('number', None)
+#         return Account.objects.filter(number=number).order_by("-created_at").first()
+    
+class AccountSearchViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = Account.objects.all()
+    serializer_class = serializers.AccountSerializer
+    authentication_classes = [authenticationJWT.JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self, request):
+        number = request.data.get('number', None)
+        print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+        print(number)
+        return Account.objects.filter(number=number).order_by("-created_at").first()
+
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     authentication_classes = [authenticationJWT.JWTAuthentication]
@@ -48,7 +70,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             
             account.save()
             return Response({'message': 'Created', 'agency': account.agency, 'number': account.number}, status=status.HTTP_201_CREATED)
-            
+    
     @action(methods=['POST'], detail=True, url_path='withdraw')
     def withdraw(self, request, pk=None):
         account = Account.objects.filter(id=pk).first()
@@ -118,6 +140,35 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
     serializer_class = serializers.TransactionSerializer
     authentication_classes = [authenticationJWT.JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = serializers.TransactionSerializer(data=request.data)
+        sender = Account.objects.all().filter(user=self.request.user).order_by("-created_at").distinct().first()
+        
+        print(serializer.initial_data["value"])
+        
+        data = {
+            "value": serializer.initial_data["value"],
+            "description": serializer.initial_data["description"],
+            "recipient": serializer.initial_data["recipient"],
+            "sender": sender.pk
+        }
+        
+        serializerFinal = serializers.TransactionSerializer(data=data)
+        
+        if serializerFinal.is_valid():
+            sender.balance -= serializerFinal.validated_data.get('value')
+            recipient = serializerFinal.validated_data.get('recipient')
+            recipient.balance += serializerFinal.validated_data.get('value')
+            
+            sender.save()
+            recipient.save()
+            
+            serializerFinal.save()
+            
+            return Response({"saldo": sender.balance}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializerFinal.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def get_queryset(self):
         """Pegar contas para usuários autenticados"""
