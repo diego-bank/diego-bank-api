@@ -6,7 +6,8 @@ router = DefaultRouter()
 router.register('accounts', views.AccountViewSet)
 router.register('transactions', views.TransactionViewSet)
 router.register('cards', views.CardViewSet)
-router.register('accounts/search/<int:number>', views.AccountSearchViewSet)
+
+# router.register('search/<int:number>', views.AccountSearchViewSet)
 
 app_name = 'api'
 

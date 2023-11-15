@@ -12,6 +12,7 @@ from django.contrib.auth.models import (
 )
 from django.utils import timezone
 from datetime import date, timedelta
+from random import randint
 
 def user_image_field(instance, filename):
     """Generate file path for user image."""

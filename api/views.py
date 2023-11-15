@@ -1,6 +1,7 @@
 from rest_framework import (
     viewsets,
-    status
+    status,
+    generics
 )
 from rest_framework.generics import mixins
 from rest_framework.response import Response
@@ -11,28 +12,6 @@ from api import serializers
 import random, decimal
 
 from rest_framework.decorators import action
-
-# class AccountSearchViewSet(mixins.ListModelMixin):
-#     queryset = Account.objects.all()
-#     authentication_classes = [authenticationJWT.JWTAuthentication]
-#     permission_classes = [IsAuthenticated]
-#     serializer = serializers.AccountSerializer
-    
-#     def get_queryset(self, request):
-#         number = request.query_params.get('number', None)
-#         return Account.objects.filter(number=number).order_by("-created_at").first()
-    
-class AccountSearchViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = Account.objects.all()
-    serializer_class = serializers.AccountSerializer
-    authentication_classes = [authenticationJWT.JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    
-    def get_queryset(self, request):
-        number = request.data.get('number', None)
-        print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-        print(number)
-        return Account.objects.filter(number=number).order_by("-created_at").first()
 
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
@@ -70,6 +49,15 @@ class AccountViewSet(viewsets.ModelViewSet):
             
             account.save()
             return Response({'message': 'Created', 'agency': account.agency, 'number': account.number}, status=status.HTTP_201_CREATED)
+    
+    @action(methods=['GET'], detail=True, url_path='search/(?P<number>[^/.]+)')
+    def get_account_by_number(self, request, pk=None, number=None):
+        try:
+            account = Account.objects.filter(number=number).order_by("-created_at").first()
+            serializer = serializers.AccountSerializer(account)
+            return Response(serializer.data)
+        except:
+            return Response(status=status.HTTP_404_NOT_FOUND)
     
     @action(methods=['POST'], detail=True, url_path='withdraw')
     def withdraw(self, request, pk=None):
