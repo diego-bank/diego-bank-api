@@ -24,10 +24,6 @@ class CreateUserAPIView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         print(request.data)
         user_serializer = self.get_serializer(data=request.data)
-        print(user_serializer)
-        print("\n\n")
-        print(user_serializer.is_valid())
-        print("\n\n")
         
         if user_serializer.is_valid():
             
@@ -56,7 +52,7 @@ class CreateUserAPIView(generics.CreateAPIView):
                 
                 return Response({'message': 'Created'}, status=status.HTTP_201_CREATED)
 
-        return Response({"Erro": "Erro"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
 
 class ManagerUserAPIView(generics.RetrieveUpdateAPIView):

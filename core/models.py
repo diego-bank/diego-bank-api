@@ -14,6 +14,8 @@ from django.utils import timezone
 from datetime import date, timedelta
 from random import randint
 
+from cpf_field.models import CPFField
+
 def user_image_field(instance, filename):
     """Generate file path for user image."""
     ext = os.path.splitext(filename)[1]
@@ -64,7 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, unique=True, null=False)
     first_name = models.CharField(max_length=255, null=False)
     last_name = models.CharField(max_length=255, null=False)
-    cpf = models.CharField(max_length=11, unique=True)
+    cpf =CPFField('cpf', unique=True)
     # cnpj = models.CharField(max_length=14, unique=True)
     url_image = models.ImageField(default=None, null=True, upload_to=user_image_field)
     is_active = models.BooleanField(default=True)

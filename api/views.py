@@ -23,7 +23,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
         return queryset.filter(
             user=self.request.user
-        ).order_by("-created_at").distinct()
+        ).order_by("created_at").distinct()
         
     def get_serializer_class(self):
         if self.action == 'retrieve' or self.action == 'create':
@@ -53,7 +53,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     @action(methods=['GET'], detail=True, url_path='search/(?P<number>[^/.]+)')
     def get_account_by_number(self, request, pk=None, number=None):
         try:
-            account = Account.objects.filter(number=number).order_by("-created_at").first()
+            account = Account.objects.filter(number=number).order_by("created_at").first()
             serializer = serializers.AccountSerializer(account)
             return Response(serializer.data)
         except:
@@ -131,30 +131,39 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
     
     def create(self, request, *args, **kwargs):
         serializer = serializers.TransactionSerializer(data=request.data)
-        sender = Account.objects.all().filter(user=self.request.user).order_by("-created_at").distinct().first()
+        sender = Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
         
-        print(serializer.initial_data["value"])
-        
+        try:
+            card = serializer.initial_data["card"]
+        except:
+            card = None
+            
         data = {
             "value": serializer.initial_data["value"],
             "description": serializer.initial_data["description"],
             "recipient": serializer.initial_data["recipient"],
+            "card": card,
             "sender": sender.pk
         }
         
         serializerFinal = serializers.TransactionSerializer(data=data)
         
         if serializerFinal.is_valid():
-            sender.balance -= serializerFinal.validated_data.get('value')
-            recipient = serializerFinal.validated_data.get('recipient')
-            recipient.balance += serializerFinal.validated_data.get('value')
             
-            sender.save()
-            recipient.save()
+            if (sender.balance - serializerFinal.validated_data.get('value')) > 0:
             
-            serializerFinal.save()
-            
-            return Response({"saldo": sender.balance}, status=status.HTTP_200_OK)
+                sender.balance -= serializerFinal.validated_data.get('value')
+                recipient = serializerFinal.validated_data.get('recipient')
+                recipient.balance += serializerFinal.validated_data.get('value')
+                
+                sender.save()
+                recipient.save()
+                
+                serializerFinal.save()
+                
+                return Response({"Valor Enviado": serializerFinal.validated_data.get('value')}, status=status.HTTP_200_OK)
+            else:
+                return Response({"Erro":"Saldo Insuficiente"}, status=status.HTTP_200_OK)
         else:
             return Response(serializerFinal.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -162,10 +171,10 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
         """Pegar contas para usuários autenticados"""
         queryset = self.queryset
         result1 = queryset.filter(
-            sender=Account.objects.all().filter(user=self.request.user).order_by("-created_at").distinct().first()
+            sender=Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
         ).order_by("-created_at").distinct()
         result2 = queryset.filter(
-            recipient=Account.objects.all().filter(user=self.request.user).order_by("-created_at").distinct().first()
+            recipient=Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
         ).order_by("-created_at").distinct()
         
         
