@@ -17,6 +17,10 @@ class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     authentication_classes = [authenticationJWT.JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_action_classes = {
+        'deposit': serializers.DepositSerializer,
+        'withdraw': serializers.WithdrawSerializer
+    }
     
     def get_queryset(self):
         """Pegar contas para usuários autenticados"""
@@ -50,7 +54,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             account.save()
             return Response({'message': 'Created', 'agency': account.agency, 'number': account.number}, status=status.HTTP_201_CREATED)
     
-    @action(methods=['GET'], detail=True, url_path='search/(?P<number>[^/.]+)')
+    @action(methods=['GET'], detail=False, url_path='search/(?P<number>[^/.]+)')
     def get_account_by_number(self, request, pk=None, number=None):
         try:
             account = Account.objects.filter(number=number).order_by("created_at").first()
@@ -59,9 +63,9 @@ class AccountViewSet(viewsets.ModelViewSet):
         except:
             return Response(status=status.HTTP_404_NOT_FOUND)
     
-    @action(methods=['POST'], detail=True, url_path='withdraw')
-    def withdraw(self, request, pk=None):
-        account = Account.objects.filter(id=pk).first()
+    @action(methods=['POST'], detail=False, url_path='withdraw', serializer_class = serializers.WithdrawSerializer)
+    def withdraw(self, request):
+        account = Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
         
         serializer_received = serializers.WithdrawSerializer(data=request.data)
         
@@ -95,9 +99,9 @@ class AccountViewSet(viewsets.ModelViewSet):
         
         return Response(serializer_received.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(methods=['POST'], detail=True, url_path='deposit')
-    def deposit(self, request, pk=None):
-        account = Account.objects.filter(id=pk).first()
+    @action(methods=['POST'], detail=False, url_path='deposit', serializer_class = serializers.DepositSerializer)
+    def deposit(self, request):
+        account = Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
         
         serializer_received = serializers.DepositSerializer(data=request.data)
         
@@ -179,6 +183,14 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
         
         
         return result1.union(result2, all=True).order_by("-created_at")
+    
+    # arrumar
+    def retrieve(self, *args, **kwargs):
+        queryset = self.queryset
+        if Account.objects.all().filter(pk=self.request.pk, sender=self.request.user) or Account.objects.all().filter(pk=self.request.pk, recipient=self.request.user):
+            return Account.objects.all().filter(pk=self.request.pk)
+        else: 
+            return Response({"ERRO": "Essa não é uma transação válida para esse usuário"}, status=status.HTTP_400_BAD_REQUEST)
     
     
 class CardViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):

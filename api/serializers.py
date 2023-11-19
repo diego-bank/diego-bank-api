@@ -23,9 +23,12 @@ class CardSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TransactionSerializer(serializers.ModelSerializer):
+    sender = AccountSerializer(many=False, read_only=True)
+    recipient = AccountSerializer(many=False, read_only=True)
+    
     class Meta:
         model = Transaction
-        fields = ['value', 'description', 'sender', 'card', 'recipient']
+        fields = ['value', 'description', 'sender', 'card', 'recipient', 'created_at']
 
 class TransactionDepositSerializer(serializers.ModelSerializer):
     class Meta:
@@ -51,10 +54,12 @@ class DepositSerializer(serializers.Serializer):
     value = serializers.DecimalField(max_digits=10, decimal_places=2)
     
     class Meta:
+        model = Transaction
         fields = ['value']
 
 class WithdrawSerializer(serializers.Serializer):
     value = serializers.DecimalField(max_digits=10, decimal_places=2)
     
     class Meta:
+        model = Transaction
         fields = ['value']
