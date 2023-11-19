@@ -1,11 +1,14 @@
 from rest_framework import serializers
 from core.models import Account, Address, Card, Transaction, Loan, LoanPayment
+from user.serializers import UserSerializer
 
 class AccountSerializer(serializers.ModelSerializer):
+    user = UserSerializer(many=False, read_only=True)
+    
     class Meta:
         model = Account
-        fields = ['id','agency', 'number']
-        read_only_fields = ['id','agency', 'number']
+        fields = ['id','agency', 'number', 'user']
+        read_only_fields = ['id','agency', 'number', 'user']
         
 class AccountDetailSerializer(AccountSerializer):
     class Meta(AccountSerializer.Meta):
@@ -28,7 +31,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Transaction
-        fields = ['value', 'description', 'sender', 'card', 'recipient', 'created_at']
+        fields = ['id', 'value', 'description', 'sender', 'card', 'recipient', 'created_at']
 
 class TransactionDepositSerializer(serializers.ModelSerializer):
     class Meta:
