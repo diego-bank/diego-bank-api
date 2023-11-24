@@ -27,7 +27,7 @@ class Account(models.Model):
     """Conta para os clientes(usuários)"""
     agency = models.CharField(max_length=255)
     number = models.CharField(max_length=8, unique=True)
-    balance = models.DecimalField(max_digits=5, decimal_places=2)
+    balance = models.DecimalField(max_digits=10, decimal_places=2)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT

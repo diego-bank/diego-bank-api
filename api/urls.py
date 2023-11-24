@@ -6,6 +6,7 @@ router = DefaultRouter()
 router.register('accounts', views.AccountViewSet)
 router.register('transactions', views.TransactionViewSet)
 router.register('cards', views.CardViewSet)
+router.register('loans', views.LoanViewSet)
 
 # router.register('search/<int:number>', views.AccountSearchViewSet)
 

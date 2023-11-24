@@ -7,11 +7,12 @@ from rest_framework.generics import mixins
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt import authentication as authenticationJWT
-from core.models import Account, Transaction, Card
+from core.models import Account, Transaction, Card, Loan
 from api import serializers
 import random, decimal
 
 from rest_framework.decorators import action
+
 
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
@@ -193,9 +194,61 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
             return Response({"ERRO": "Essa não é uma transação válida para esse usuário"}, status=status.HTTP_400_BAD_REQUEST)
     
     
-class CardViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class CardViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Card.objects.all()
     serializer_class = serializers.CardSerializer
     authentication_classes = [authenticationJWT.JWTAuthentication]
     permission_classes = [IsAuthenticated]
     
+    def get_queryset(self):
+        """Pegar contas para usuários autenticados"""
+        queryset = self.queryset
+        return queryset.filter(account=(Account.objects.all().filter(user=self.request.user).order_by("created_at").first())).order_by("created_at").distinct()
+        
+    
+    
+class LoanViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = Loan.objects.all()
+    serializer_class = serializers.LoanSerializer
+    authentication_classes = [authenticationJWT.JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Pegar empréstimos para usuários autenticados"""
+        queryset = self.queryset
+        return queryset.filter(account=(Account.objects.all().filter(user=self.request.user).order_by("created_at").first())).order_by("created_at").distinct()
+    
+    def create(self, request, *args, **kwargs):
+        account = Account.objects.all().filter(user=self.request.user).order_by("created_at").first()
+        
+        serializer = serializers.LoanSerializer(data=request.data)
+        
+        serializer.initial_data["account"] = account.pk
+        
+        if serializer.is_valid():
+            if account.balance >= 100:
+                
+                account.balance += serializer.validated_data.get('value')
+                account.save()
+                
+                loan = Loan(
+                    value=serializer.validated_data.get('value'),
+                    payments=serializer.validated_data.get('payments'),
+                    approved=True,
+                    payed=False,
+                    account=serializer.validated_data.get('account')
+                )
+                loan.save()
+                return Response({'approved': True}, status=status.HTTP_201_CREATED)
+            else:
+                loan = Loan(
+                    value=serializer.validated_data.get('value'),
+                    payments=serializer.validated_data.get('payments'),
+                    approved=False,
+                    payed=False,
+                    account=serializer.validated_data.get('account')
+                )
+                loan.save()
+                return Response({'approved': False}, status=status.HTTP_201_CREATED)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
