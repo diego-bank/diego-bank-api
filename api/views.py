@@ -135,7 +135,8 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
     permission_classes = [IsAuthenticated]
     
     def create(self, request, *args, **kwargs):
-        serializer = serializers.TransactionSerializer(data=request.data)
+        print(request.data)
+        serializer = serializers.CreateTransactionSerializer(data=request.data)
         sender = Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
         
         try:
@@ -151,15 +152,20 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
             "sender": sender.pk
         }
         
-        serializerFinal = serializers.TransactionSerializer(data=data)
+        print(data)
+        
+        serializerFinal = serializers.CreateTransactionSerializer(data=data)
         
         if serializerFinal.is_valid():
             
             if (sender.balance - serializerFinal.validated_data.get('value')) > 0:
             
+                print(sender.balance)
                 sender.balance -= serializerFinal.validated_data.get('value')
                 recipient = serializerFinal.validated_data.get('recipient')
+                print(recipient)
                 recipient.balance += serializerFinal.validated_data.get('value')
+                print(recipient.balance)
                 
                 sender.save()
                 recipient.save()
