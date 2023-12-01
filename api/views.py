@@ -128,11 +128,14 @@ class AccountViewSet(viewsets.ModelViewSet):
             
         return Response(serializer_received.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Transaction.objects.all()
     serializer_class = serializers.TransactionSerializer
     authentication_classes = [authenticationJWT.JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_action_classes = {
+        'card': serializers.TransactionSerializer,
+    }
     
     def create(self, request, *args, **kwargs):
         print(request.data)
@@ -159,17 +162,18 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
         if serializerFinal.is_valid():
             
             if (sender.balance - serializerFinal.validated_data.get('value')) > 0:
-            
-                print(sender.balance)
-                sender.balance -= serializerFinal.validated_data.get('value')
-                recipient = serializerFinal.validated_data.get('recipient')
-                print(recipient)
-                recipient.balance += serializerFinal.validated_data.get('value')
-                print(recipient.balance)
                 
-                sender.save()
-                recipient.save()
-                
+                if (serializerFinal.validated_data.get('card') == None):
+                    print(sender.balance)
+                    sender.balance -= serializerFinal.validated_data.get('value')
+                    recipient = serializerFinal.validated_data.get('recipient')
+                    print(recipient)
+                    recipient.balance += serializerFinal.validated_data.get('value')
+                    print(recipient.balance)
+                    
+                    sender.save()
+                    recipient.save()
+                    
                 serializerFinal.save()
                 
                 return Response({"Valor Enviado": serializerFinal.validated_data.get('value')}, status=status.HTTP_200_OK)
@@ -183,7 +187,7 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
         queryset = self.queryset
         result1 = queryset.filter(
             sender=Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
-        ).order_by("-created_at").distinct()
+        ).exclude(card__isnull=False).order_by("-created_at").distinct()
         result2 = queryset.filter(
             recipient=Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
         ).order_by("-created_at").distinct()
@@ -191,13 +195,23 @@ class TransactionViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.
         
         return result1.union(result2, all=True).order_by("-created_at")
     
-    # arrumar
-    def retrieve(self, *args, **kwargs):
+    @action(methods=['GET'], detail=False, url_path='card', serializer_class=serializers.TransactionSerializer)
+    def cards(self, request):
         queryset = self.queryset
-        if Account.objects.all().filter(pk=self.request.pk, sender=self.request.user) or Account.objects.all().filter(pk=self.request.pk, recipient=self.request.user):
-            return Account.objects.all().filter(pk=self.request.pk)
-        else: 
-            return Response({"ERRO": "Essa não é uma transação válida para esse usuário"}, status=status.HTTP_400_BAD_REQUEST)
+        result = queryset.filter(
+            sender=Account.objects.all().filter(user=self.request.user).order_by("created_at").distinct().first()
+        ).exclude(card__isnull=True).order_by("-created_at").distinct()
+        
+        serializer = serializers.TransactionSerializer(result, many=True)
+
+        return Response(serializer.data)
+    
+    # def retrieve(self, *args, **kwargs):
+    #     queryset = self.queryset
+    #     if Account.objects.all().filter(pk=self.request.pk, sender=self.request.user) or Account.objects.all().filter(pk=self.request.pk, recipient=self.request.user):
+    #         return Account.objects.all().filter(pk=self.request.pk)
+    #     else: 
+    #         return Response({"ERRO": "Essa não é uma transação válida para esse usuário"}, status=status.HTTP_400_BAD_REQUEST)
     
     
 class CardViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -205,6 +219,22 @@ class CardViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gener
     serializer_class = serializers.CardSerializer
     authentication_classes = [authenticationJWT.JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    
+    def create(self, request, *args, **kwargs):
+        account = Account.objects.all().filter(user=self.request.user).order_by("created_at").first()
+        
+        serializer = serializers.CardSerializer(data=request.data)
+        
+        serializer.initial_data["account"] = account.pk
+        
+        if serializer.is_valid():
+            if account.balance >= 100:
+                serializer.save()
+                return Response(serializer.data)
+            else:
+                return Response({'approved': False, 'message': 'Seu saldo deve ser maior que 100'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def get_queryset(self):
         """Pegar contas para usuários autenticados"""
@@ -255,6 +285,6 @@ class LoanViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gener
                     account=serializer.validated_data.get('account')
                 )
                 loan.save()
-                return Response({'approved': False}, status=status.HTTP_201_CREATED)
+                return Response({'approved': False, 'message': 'Seu saldo deve ser maior que 100'}, status=status.HTTP_400_BAD_REQUEST)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

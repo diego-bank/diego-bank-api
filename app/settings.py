@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'corsheaders',
     'cpf_field',
+    'django_filters',
     
     'core',
     'user',
@@ -161,6 +162,7 @@ REST_FRAMEWORK = {
         'anon': '3/minute',
         'user': '5000/minute'
     },
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
 
 SIMPLE_JWT = {
