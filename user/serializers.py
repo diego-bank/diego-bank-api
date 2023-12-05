@@ -34,3 +34,12 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
 
         return user
+    
+class UpdateUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['email', 'first_name', 'last_name', 'cpf', 'created_at', 'url_image']
+        extra_kwargs = {
+            'is_active': {'read_only': True},
+            'created_at': {'read_only': True},
+        }

@@ -8,7 +8,7 @@ from rest_framework import (
 )
 from rest_framework_simplejwt import authentication as authenticationJWT
 
-from user.serializers import UserSerializer
+from user.serializers import UserSerializer, UpdateUserSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
 
@@ -55,7 +55,7 @@ class CreateUserAPIView(generics.CreateAPIView):
         return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
 
-class ManagerUserAPIView(generics.RetrieveUpdateAPIView):
+class ManagerUserAPIView(generics.RetrieveAPIView):
     """Manage for the users"""
     serializer_class = UserSerializer
     authentication_classes = [authenticationJWT.JWTAuthentication]
@@ -76,3 +76,12 @@ class ManagerUserAPIView(generics.RetrieveUpdateAPIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class UpdateUserAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = UpdateUserSerializer
+    authentication_classes = [authenticationJWT.JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        """Retrieve and return a user."""
+        return self.request.user
