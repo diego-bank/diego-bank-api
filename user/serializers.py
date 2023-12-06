@@ -42,4 +42,5 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'is_active': {'read_only': True},
             'created_at': {'read_only': True},
+            'url_image': {'read_only': False},
         }
